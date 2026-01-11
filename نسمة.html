@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نسمة نت - النظام المتكامل</title>
+    <style>
+        :root { --p: #ff0000; --s: #10b981; --bg: #071a2d; --card: #0c243d; --text: #fff; --accent: #ffd600; }
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); direction: rtl; padding-bottom: 80px; }
+        .container { max-width: 500px; margin: 20px auto; background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid #1e3a5a; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        h1 { font-size: 32px; color: var(--accent); text-align: center; margin-bottom: 20px; text-shadow: 2px 2px #000; }
+        h3 { border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-top: 0; }
+
+        input, select { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 2px solid #1e3a5a; background: #f8f9fa; color: #333; font-weight: bold; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; font-size: 17px; transition: 0.3s; }
+        
+        .btn-login { background: linear-gradient(45deg, #007bff, #00d4ff); color: white; }
+        .btn-save { background: var(--s); color: white; }
+        .btn-gen { background: var(--accent); color: #000; }
+        .btn-danger { background: var(--p); color: white; }
+
+        /* واجهة المستخدم */
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .status-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid #2d4a6d; }
+        .status-card small { display: block; color: #aaa; font-size: 12px; margin-bottom: 5px; }
+        .status-card span { font-size: 18px; font-weight: bold; color: var(--accent); }
+        .timer-box { background: #b22222; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 15px; }
+
+        /* شريط التنقل */
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #0a1929; display: flex; padding: 12px; border-top: 1px solid #1e3a5a; z-index: 1000; }
+        .nav-item { flex: 1; color: #6b7280; font-size: 12px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .nav-item.active { color: var(--accent); font-weight: bold; }
+
+        /* الكروت */
+        #print-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
+        .card-ticket { background: #fff; color: #000; padding: 10px; border-radius: 8px; border: 2px dashed #000; text-align: center; font-size: 12px; }
+        .card-ticket b { font-size: 14px; color: #d32f2f; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #print-preview, #print-preview * { visibility: visible; }
+            #print-preview { position: absolute; top:0; left:0; width:100%; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; background:white; }
+            .card-ticket { border: 1px solid #000; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="view-login" class="container">
+        <h1>نسمة نت</h1>
+        <p style="text-align:center; color:#888;">الرجاء إدخال بيانات الدخول</p>
+        <input id="login_u" type="text" placeholder="اسم المستخدم (أو كود الكرت)">
+        <input id="login_p" type="password" placeholder="كلمة المرور">
+        <button class="btn-login" onclick="handleLogin()">دخول للنظام</button>
+        <p style="font-size:12px; text-align:center; color:#555;">v19.5 Ultimate Edition</p>
+    </div>
+
+    <div id="view-user" class="container" style="display:none">
+        <div class="timer-box">
+            <small style="color:#ffcccc">الوقت المتبقي لديك</small>
+            <div id="u-time" style="font-size:28px; font-weight:bold; margin-top:5px;">00:00:00</div>
+        </div>
+        <div class="status-grid">
+            <div class="status-card"><small>المستخدم</small><span id="u-name">---</span></div>
+            <div class="status-card"><small>رصيد المحفظة</small><span id="u-wallet">0.00 د.ل</span></div>
+            <div class="status-card"><small>البيانات (GB)</small><span id="u-gb">0 GB</span></div>
+            <div class="status-card"><small>السرعة</small><span id="u-speed">0 Mbps</span></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:15px;">
+            <label>شحن كرت رصيد:</label>
+            <input id="scratch_code" placeholder="أدخل كود الرصيد هنا">
+            <button class="btn-save" onclick="redeemScratch()">اشحن الآن</button>
+        </div>
+        <button class="btn-danger" onclick="location.reload()" style="margin-top:20px; background:#444;">تسجيل خروج</button>
+    </div>
+
+    <div id="view-admin" style="display:none">
+        
+        <div id="sec-users" class="container">
+            <h3>👥 المشتركين النشطين</h3>
+            <input id="search_input" onkeyup="drawUsersList()" placeholder="بحث باسم المستخدم...">
+            <div id="users_list" style="max-height:350px; overflow-y:auto;"></div>
+        </div>
+
+        <div id="sec-add" class="container" style="display:none">
+            <h3>➕ إضافة يدوي / باقة</h3>
+            <input id="in_name" placeholder="الاسم / كود المستخدم">
+            <input id="in_pass" placeholder="كلمة المرور">
+            <div style="display:flex; gap:5px;">
+                <input id="in_d" type="number" placeholder="أيام" value="0">
+                <input id="in_h" type="number" placeholder="ساعة" value="0">
+                <input id="in_m" type="number" placeholder="دقيقة" value="0">
+            </div>
+            <div style="display:flex; gap:5px;">
+                <input id="in_gb" type="number" placeholder="جيجا GB">
+                <input id="in_speed" type="number" placeholder="سرعة Mbps">
+            </div>
+            <input id="in_price" type="number" placeholder="السعر (للباقة فقط)">
+            <button class="btn-save" onclick="addUserManually()">إضافة مستخدم فوراً</button>
+            <button class="btn-gen" onclick="saveNewPlan()">حفظ كباقة جاهزة</button>
+        </div>
+
+        <div id="sec-gen" class="container" style="display:none">
+            <h3>🎫 توليد الكروت والطباعة</h3>
+            <select id="gen_type" onchange="toggleGenUI()">
+                <option value="net">كروت إنترنت (باقات)</option>
+                <option value="money">كروت رصيد مالي (محفظة)</option>
+            </select>
+            
+            <div id="ui-net-select">
+                <label>اختر الباقة:</label>
+                <select id="plan_id"></select>
+            </div>
+            
+            <div id="ui-money-input" style="display:none">
+                <label>قيمة الكرت المالي (د.ل):</label>
+                <input id="money_val" type="number" placeholder="مثال: 5">
+            </div>
+
+            <input id="gen_qty" type="number" placeholder="كمية الكروت المطلوبة">
+            <button class="btn-gen" onclick="generateProcess()">1. توليد وحفظ الكروت</button>
+            <button class="btn-save" onclick="window.print()" id="print-btn" style="display:none; background:#007bff;">2. طباعة الكروت</button>
+            
+            <div id="print-preview"></div>
+        </div>
+
+        <div id="sec-logs" class="container" style="display:none">
+            <h3>📋 سجل عمليات الشحن</h3>
+            <div id="logs_content"></div>
+        </div>
+
+        <div class="nav-bar">
+            <div class="nav-item active" onclick="tab('sec-users', this)">👥 بحث</div>
+            <div class="nav-item" onclick="tab('sec-add', this)">➕ إضافة</div>
+            <div class="nav-item" onclick="tab('sec-gen', this)">🎫 توليد</div>
+            <div class="nav-item" onclick="tab('sec-logs', this)">📋 سجل</div>
+            <div class="nav-item" onclick="location.reload()">❌ خروج</div>
+        </div>
+    </div>
+
+    <script>
+        // قاعدة البيانات
+        let db = JSON.parse(localStorage.getItem("nesma_pro_v19")) || {
+            users: { "admin": { pass: "12345", role: "admin", wallet: 0 } },
+            plans: [],
+            scratch_cards: {},
+            logs: []
+        };
+
+        let activeSession = null;
+
+        function save() {
+            localStorage.setItem("nesma_pro_v19", JSON.stringify(db));
+            updatePlanDropdowns();
+        }
+
+        // تبديل التبويبات
+        function tab(id, el) {
+            ["sec-users", "sec-add", "sec-gen", "sec-logs"].forEach(s => document.getElementById(s).style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+            if(id === 'sec-users') drawUsersList();
+            if(id === 'sec-logs') drawLogs();
+        }
+
+        // تسجيل الدخول
+        function handleLogin() {
+            let u = document.getElementById("login_u").value.trim();
+            let p = document.getElementById("login_p").value.trim();
+
+            if(db.users[u] && db.users[u].pass === p) {
+                activeSession = u;
+                document.getElementById("view-login").style.display = 'none';
+                if(db.users[u].role === "admin") {
+                    document.getElementById("view-admin").style.display = 'block';
+                    drawUsersList();
+                } else {
+                    document.getElementById("view-user").style.display = 'block';
+                    startUserDashboard();
+                }
+            } else {
+                alert("بيانات الدخول غير صحيحة");
+            }
+        }
+
+        // حساب الثواني
+        function getInSeconds() {
+            let d = parseInt(document.getElementById("in_d").value || 0);
+            let h = parseInt(document.getElementById("in_h").value || 0);
+            let m = parseInt(document.getElementById("in_m").value || 0);
+            return (d * 86400) + (h * 3600) + (m * 60);
+        }
+
+        // إضافة مستخدم يدوي
+        function addUserManually() {
+            let name = document.getElementById("in_name").value.trim();
+            if(!name) return alert("أدخل اسم المستخدم");
+            db.users[name] = {
+                pass: document.getElementById("in_pass").value || "1234",
+                time: getInSeconds(),
+                gb: document.getElementById("in_gb").value || 0,
+                speed: document.getElementById("in_speed").value || 10,
+                wallet: 0,
+                role: "user"
+            };
+            save(); alert("تمت إضافة المستخدم بنجاح");
+        }
+
+        // حفظ باقة
+        function saveNewPlan() {
+            db.plans.push({
+                name: document.getElementById("in_name").value || "باقة",
+                time: getInSeconds(),
+                gb: document.getElementById("in_gb").value || 0,
+                speed: document.getElementById("in_speed").value || 10,
+                price: document.getElementById("in_price").value || 0
+            });
+            save(); alert("تم حفظ الباقة في النظام");
+        }
+
+        function updatePlanDropdowns() {
+            let sel = document.getElementById("plan_id");
+            if(sel) sel.innerHTML = db.plans.map((p, i) => `<option value="${i}">${p.name} - ${p.price} د.ل</option>`).join('');
+        }
+
+        function toggleGenUI() {
+            let t = document.getElementById("gen_type").value;
+            document.getElementById("ui-net-select").style.display = t === 'net' ? 'block' : 'none';
+            document.getElementById("ui-money-input").style.display = t === 'money' ? 'block' : 'none';
+        }
+
+        // توليد الكروت
+        function generateProcess() {
+            let type = document.getElementById("gen_type").value;
+            let qty = parseInt(document.getElementById("gen_qty").value || 0);
+            let preview = document.getElementById("print-preview");
+            preview.innerHTML = "";
+
+            if(qty <= 0) return alert("حدد الكمية");
+
+            for(let i=0; i<qty; i++) {
+                let code = Math.random().toString(36).substring(2,8).toUpperCase();
+                if(type === 'net') {
+                    let p = db.plans[document.getElementById("plan_id").value];
+                    let pass = Math.floor(1000 + Math.random()*9000);
+                    db.users[code] = { pass: pass.toString(), time: p.time, gb: p.gb, speed: p.speed, wallet: 0, role: "user" };
+                    preview.innerHTML += `<div class="card-ticket"><b>نسمة نت (باقة)</b><br>مستخدم: ${code}<br>كلمة سر: ${pass}<br>${p.name}</div>`;
+                } else {
+                    let val = document.getElementById("money_val").value;
+                    if(!val) return alert("حدد قيمة الكرت");
+                    db.scratch_cards[code] = val;
+                    preview.innerHTML += `<div class="card-ticket"><b>نسمة (كرت رصيد)</b><br>القيمة: ${val} د.ل<br>الكود: ${code}</div>`;
+                }
+            }
+            save();
+            document.getElementById("print-btn").style.display = "block";
+            alert("تم التوليد والحفظ بنجاح.");
+        }
+
+        // واجهة العميل
+        function startUserDashboard() {
+            let u = db.users[activeSession];
+            document.getElementById("u-name").innerText = activeSession;
+            document.getElementById("u-wallet").innerText = (u.wallet || 0).toFixed(2) + " د.ل";
+            document.getElementById("u-gb").innerText = (u.gb || 0) + " GB";
+            document.getElementById("u-speed").innerText = (u.speed || 0) + " Mbps";
+            
+            setInterval(() => {
+                if(u.time > 0) {
+                    u.time--;
+                    let d = Math.floor(u.time/86400), h = Math.floor((u.time%86400)/3600), m = Math.floor((u.time%3600)/60), s = u.time%60;
+                    document.getElementById("u-time").innerText = `${d}ي ${h}س ${m}د ${s}ث`;
+                } else {
+                    document.getElementById("u-time").innerText = "منتهي";
+                }
+                if(u.time % 20 === 0) save();
+            }, 1000);
+        }
+
+        // شحن كرت الرصيد من قبل العميل
+        function redeemScratch() {
+            let code = document.getElementById("scratch_code").value.trim().toUpperCase();
+            if(db.scratch_cards[code]) {
+                let val = parseFloat(db.scratch_cards[code]);
+                db.users[activeSession].wallet += val;
+                db.logs.unshift({ user: activeSession, amount: val, date: new Date().toLocaleString('ar-LY') });
+                delete db.scratch_cards[code];
+                save();
+                alert("تم شحن الرصيد بنجاح!");
+                location.reload();
+            } else {
+                alert("كود الكرت غير صحيح أو مستخدم مسبقاً");
+            }
+        }
+
+        function drawUsersList() {
+            let q = document.getElementById("search_input").value.toLowerCase();
+            let div = document.getElementById("users_list");
+            div.innerHTML = "";
+            for(let u in db.users) {
+                if(u === "admin" || !u.toLowerCase().includes(q)) continue;
+                div.innerHTML += `<div class="status-card" style="margin-bottom:8px; text-align:right;">
+                    <b>المستخدم: ${u}</b> [${db.users[u].pass}]<br>
+                    <small>الرصيد: ${db.users[u].wallet} د.ل | الجيجات: ${db.users[u].gb}</small>
+                    <button onclick="delete db.users['${u}'];save();drawUsersList()" style="width:auto; padding:5px 10px; font-size:10px; background:red; color:white; margin-top:5px;">حذف</button>
+                </div>`;
+            }
+        }
+
+        function drawLogs() {
+            let div = document.getElementById("logs_content");
+            div.innerHTML = db.logs.map(l => `<div class="status-card" style="margin-bottom:5px; font-size:13px; text-align:right;">
+                قام <b>${l.user}</b> بشحن <b>${l.amount} د.ل</b><br><small>${l.date}</small>
+            </div>`).join('');
+        }
+
+        window.onload = updatePlanDropdowns;
+    </script>
+</body>
+</html>
