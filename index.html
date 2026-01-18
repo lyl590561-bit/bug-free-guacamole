@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نسمة نت v46.0 | الإدارة الشاملة</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* الهوية البصرية لملف 322.html */
+        body { margin: 0; font-family: Tahoma, sans-serif; background: #071a2d; color: #fff; text-align: center; direction: rtl; }
+        .container { max-width: 800px; margin: 20px auto; background: #000; padding: 20px; border-radius: 16px; border: 1px solid #333; }
+        h1 { font-size: 50px; color: #ffd600; margin: 10px 0; }
+        h2 { font-size: 28px; margin-bottom: 20px; color: #ffd600; }
+        input, select { width: 90%; padding: 12px; margin: 8px 0; font-size: 18px; border-radius: 10px; border: none; text-align: center; background: #fff; color: #000; }
+        button { width: 85%; padding: 14px; margin: 8px 0; font-size: 18px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; transition: .3s; }
+        
+        .btn-blue { background: #5bbce8; color: #000; }
+        .btn-gold { background: #ffd600; color: #000; }
+        .btn-green { background: #2ecc71; color: #fff; }
+        .btn-red { background: #e74c3c; color: #fff; }
+
+        /* بلوكات البيانات */
+        .user-box { background: #9e2b2b; border-radius: 14px; padding: 15px; margin-bottom: 12px; font-size: 18px; font-weight: bold; border: 1px solid #800; }
+        .user-box.red-alert { background: #ff0000; }
+        .user-box span { display: block; margin-top: 8px; font-size: 24px; color: #fff; }
+
+        /* الجداول والتبويبات */
+        .tabs { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 15px; padding: 5px; }
+        .tabs button { flex: 1; padding: 12px; font-size: 13px; background: #1a2634; color: #fff; border-radius: 8px; width: auto; min-width: 100px; }
+        .tabs button.active { background: #ffd600; color: #000; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; background: #111; }
+        th, td { border: 1px solid #333; padding: 10px; text-align: center; }
+        th { background: #222; color: #ffd600; }
+        
+        .page { display: none; } .active-page { display: block; }
+        .pkg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; }
+        .pkg-card { background: #1a2634; padding: 10px; border-radius: 10px; border: 1px solid #333; font-size: 12px; }
+
+        @media print { .no-print { display: none !important; } .v-card { display: inline-block; width: 170px; padding: 10px; border: 2px dashed #000; margin: 10px; color: #000; background: #fff; text-align: center; font-weight: bold; font-size: 14px; } }
+    </style>
+</head>
+<body>
+
+<div class="container no-print">
+    <div id="loginPage" class="page active-page">
+        <h1>نسمة نت</h1>
+        <div style="background:#8aff00; padding:10px; margin-bottom:20px; border-radius:8px; color:#000; font-weight:bold;">
+            للتواصل معنا: <span id="marquee-text">0925971747</span>
+        </div>
+        <input id="uInp" placeholder="اسم المستخدم">
+        <input id="pInp" type="password" placeholder="كلمة المرور">
+        <button class="btn-blue" onclick="login()">دخول المنظومة</button>
+    </div>
+
+    <div id="adminPage" class="page">
+        <h2>لوحة الإدارة الشاملة</h2>
+        <div class="tabs">
+            <button onclick="showTab('adm-u', this)" class="active">المشتركين</button>
+            <button onclick="showTab('adm-p', this)">الباقات</button>
+            <button onclick="showTab('adm-r', this)">الموزعين</button>
+            <button onclick="showTab('adm-c', this)">توليد كروت</button> <button onclick="showTab('adm-a', this)">الأرشيف</button>
+        </div>
+
+        <div id="adm-u" class="adm-sec active-page">
+            <button class="btn-green" onclick="addUser('admin')">+ إضافة مشترك يدوي</button>
+            <table id="admUsersTable"><thead><tr><th>المشترك</th><th>رصيد</th><th>جيجا</th><th>الانتهاء</th><th>حذف</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <div id="adm-p" class="adm-sec" style="display:none">
+            <div style="max-height:400px; overflow-y:auto">
+                <table id="pkgEditTable"><thead><tr><th>الباقة</th><th>السعر</th><th>GB</th><th>أيام</th></tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+
+        <div id="adm-r" class="adm-sec" style="display:none">
+            <input id="resN" placeholder="اسم الموزع">
+            <input id="resP" placeholder="كلمة السر">
+            <button class="btn-green" onclick="addReseller()">إضافة موزع جديد</button>
+            <table id="resTable"><thead><tr><th>الموزع</th><th>الرصيد</th><th>شحن</th><th>حذف</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <div id="adm-c" class="adm-sec" style="display:none">
+            <div class="user-box" style="background:#1a2634">توليد كروت كمدير (بدون خصم رصيد)</div>
+            <select id="admRcType"><option value="money">كرت رصيد مالي</option><option value="pkg">كرت باقة جاهزة</option></select>
+            <input id="admRcVal" type="number" placeholder="القيمة أو رقم الباقة">
+            <input id="admRcQty" type="number" placeholder="عدد الكروت">
+            <button class="btn-gold" onclick="generateCards('admin')">توليد وطباعة الكروت</button>
+            <hr>
+            <div class="user-box" style="background:#1a2634">تفعيل باقة مباشرة لمشترك</div>
+            <input id="admTarget" placeholder="اسم يوزر المشترك">
+            <select id="admPkgId"></select>
+            <button class="btn-blue" onclick="directActivate()">تفعيل فوري للمشترك</button>
+        </div>
+
+        <div id="adm-a" class="adm-sec" style="display:none">
+            <table id="fullArc"><thead><tr><th>الكود</th><th>القيمة</th><th>بواسطة</th><th>الحالة</th><th>المستخدم</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <button class="btn-red" onclick="location.reload()">تسجيل خروج</button>
+    </div>
+
+    <div id="resellerPage" class="page">
+        <h2 id="resTitle"></h2>
+        <div class="user-box">رصيد محفظتك المالي<span><span id="resBal">0</span> د.ل</span></div>
+        <div class="tabs">
+            <button onclick="showResSec('res-u', this)" class="active">إدارة زبائني</button>
+            <button onclick="showResSec('res-s', this)">تفعيل باقة</button>
+            <button onclick="showResSec('res-c', this)">توليد كروت</button>
+        </div>
+        <div id="res-u" class="res-page active-page">
+            <button class="btn-blue" onclick="addUser('reseller')">+ إنشاء حساب لزبون</button>
+            <table id="resUsersTable"><thead><tr><th>الزبون</th><th>جيجا</th><th>الانتهاء</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div id="res-s" class="res-page" style="display:none">
+            <input id="rsTarget" placeholder="اسم يوزر الزبون">
+            <select id="rsPkgId"></select>
+            <button class="btn-green" onclick="resSell()">تفعيل فوري الآن</button>
+        </div>
+        <div id="res-c" class="res-page" style="display:none">
+            <select id="rcType"><option value="money">كرت رصيد مالي</option><option value="pkg">كرت باقة جاهزة</option></select>
+            <input id="rcVal" type="number" placeholder="القيمة أو رقم الباقة">
+            <input id="rcQty" type="number" placeholder="عدد الكروت">
+            <button class="btn-gold" onclick="generateCards('reseller')">توليد وطباعة الكروت</button>
+        </div>
+        <button class="btn-red" onclick="location.reload()">خروج</button>
+    </div>
+
+    <div id="userPage" class="page">
+        <h2 id="uWelcome"></h2>
+        <div class="user-box red-alert">تنبيه<span>اتق الله في استخدام الإنترنت</span></div>
+        <div class="user-box">الوقت المتبقي للجلسة<span><span id="uTimeDisp">--</span></span></div>
+        <div class="user-box">التحميل المتاح (الجيجا)<span><span id="uQuotaDisp">0</span> GB</span></div>
+        <div class="user-box">رصيد حسابك المالي<span><span id="uMoneyDisp">0</span> د.ل</span></div>
+        
+        <div class="tabs">
+            <button onclick="showUSec('u-r', this)" class="active">شحن كرت</button>
+            <button onclick="showUSec('u-s', this)">متجر الباقات</button>
+        </div>
+        <div id="u-r" class="u-page active-page">
+            <input id="reCode" placeholder="أدخل كود الكرت هنا">
+            <button class="btn-gold" onclick="recharge()">شحن الآن</button>
+        </div>
+        <div id="u-s" class="u-page" style="display:none">
+            <div id="userShop" class="pkg-grid"></div>
+        </div>
+        <button class="btn-red" onclick="logout()">قطع الاتصال</button>
+    </div>
+</div>
+
+<div id="print-area"></div>
+
+<script>
+    // قاعدة البيانات
+    let db = JSON.parse(localStorage.getItem('NESMA_V46_DB')) || {
+        admin: { user:"admin", pass:"12345" },
+        users: {}, resellers: {}, cards: [],
+        pkgs: Array.from({length:30}, (_,i)=>({id:i+1, name:`باقة ${i+1}`, price:(i+1)*5, gig:(i+1)*10, days:30}))
+    };
+
+    let current = null;
+    let role = ""; 
+    const save = () => localStorage.setItem('NESMA_V46_DB', JSON.stringify(db));
+
+    function login() {
+        let u = document.getElementById('uInp').value.trim();
+        let p = document.getElementById('pInp').value.trim();
+        if(u === db.admin.user && p === db.admin.pass) { role="admin"; showPage('adminPage'); renderAdmin(); }
+        else if(db.resellers[u] && db.resellers[u].pass === p) { role="reseller"; current = u; showPage('resellerPage'); renderReseller(); }
+        else if(db.users[u] && db.users[u].pass === p) { 
+            role="user";
+            if(db.users[u].time <= 0 && db.users[u].quota <= 0) return Swal.fire('منتهي','الكرت منتهي الصلاحية','error');
+            current = u; showPage('userPage'); renderUser(); startLiveCounter();
+        } else Swal.fire('خطأ','بيانات الدخول خاطئة','error');
+    }
+
+    // العداد التنازلي التلقائي
+    function startLiveCounter() {
+        setInterval(() => {
+            if(!current || role !== "user") return;
+            let user = db.users[current];
+            if(user.time > 0) user.time--;
+            if(user.quota > 0) user.quota -= 0.00001; 
+            save();
+            document.getElementById('uTimeDisp').innerText = formatTime(user.time);
+            document.getElementById('uQuotaDisp').innerText = user.quota.toFixed(3);
+            if(user.time <= 0) location.reload();
+        }, 1000);
+    }
+
+    function formatTime(s) {
+        let d=Math.floor(s/86400), h=Math.floor((s%86400)/3600), m=Math.floor((s%3600)/60), sec=s%60;
+        return `${d} يوم و ${h}:${m}:${sec}`;
+    }
+
+    function activatePkg(u, pkg) {
+        db.users[u].quota += pkg.gig;
+        db.users[u].time = pkg.days * 86400; 
+        save();
+    }
+
+    // العرض (Render)
+    function renderAdmin() {
+        let h = ''; for(let u in db.users) h += `<tr><td>${u}</td><td>${db.users[u].money}</td><td>${db.users[u].quota.toFixed(2)}</td><td>${formatTime(db.users[u].time)}</td><td><button class="btn-red" style="padding:5px; width:auto" onclick="del('u','${u}')">X</button></td></tr>`;
+        document.getElementById('admUsersTable').querySelector('tbody').innerHTML = h;
+        
+        let ph = ''; db.pkgs.forEach((p,i) => ph += `<tr><td>${p.name}</td><td><input type="number" value="${p.price}" onchange="db.pkgs[${i}].price=this.value;save()"></td><td><input type="number" value="${p.gig}" onchange="db.pkgs[${i}].gig=this.value;save()"></td><td><input type="number" value="${p.days}" onchange="db.pkgs[${i}].days=this.value;save()"></td></tr>`);
+        document.getElementById('pkgEditTable').querySelector('tbody').innerHTML = ph;
+
+        let rh = ''; for(let r in db.resellers) rh += `<tr><td>${r}</td><td>${db.resellers[r].credit}</td><td><button class="btn-green" style="width:auto" onclick="addCr('${r}')">+</button></td><td><button class="btn-red" style="width:auto" onclick="del('r','${r}')">X</button></td></tr>`;
+        document.getElementById('resTable').querySelector('tbody').innerHTML = rh;
+
+        let ah = ''; db.cards.slice().reverse().slice(0,50).forEach(c => ah += `<tr><td>${c.code}</td><td>${c.val}</td><td>${c.creator}</td><td>${c.used?'✅':'⏳'}</td><td>${c.usedBy || '-'}</td></tr>`);
+        document.getElementById('fullArc').innerHTML = ah;
+
+        let oh = ''; db.pkgs.forEach(p => oh += `<option value="${p.id}">${p.name}</option>`);
+        document.getElementById('admPkgId').innerHTML = oh;
+    }
+
+    function renderReseller() {
+        let r = db.resellers[current];
+        document.getElementById('resTitle').innerText = "الموزع: " + current;
+        document.getElementById('resBal').innerText = r.credit;
+        let h = ''; for(let u in db.users) h += `<tr><td>${u}</td><td>${db.users[u].quota.toFixed(2)}</td><td>${formatTime(db.users[u].time)}</td></tr>`;
+        document.getElementById('resUsersTable').querySelector('tbody').innerHTML = h;
+        let oh = ''; db.pkgs.forEach(p => oh += `<option value="${p.id}">${p.name}</option>`);
+        document.getElementById('rsPkgId').innerHTML = oh;
+    }
+
+    function renderUser() {
+        let u = db.users[current];
+        document.getElementById('uWelcome').innerText = "مرحباً، " + current;
+        document.getElementById('uMoneyDisp').innerText = u.money;
+        let h = ''; db.pkgs.forEach(p => h += `<div class="pkg-card"><b>${p.name}</b><br>${p.gig}GB<br>${p.price}د.ل<br><button class="btn-blue" style="width:100%; font-size:11px; padding:5px" onclick="buyPkg(${p.id})">تفعيل</button></div>`);
+        document.getElementById('userShop').innerHTML = h;
+    }
+
+    // تفعيل مباشر من الأدمن
+    function directActivate() {
+        let u = document.getElementById('admTarget').value.trim();
+        let pId = document.getElementById('admPkgId').value;
+        let p = db.pkgs.find(x=>x.id==pId);
+        if(db.users[u]) { activatePkg(u, p); Swal.fire('نجح','تم التفعيل للمشترك مباشرة','success'); renderAdmin(); }
+        else Swal.fire('خطأ','المستخدم غير موجود','error');
+    }
+
+    function recharge() {
+        let code = document.getElementById('reCode').value.trim();
+        let idx = db.cards.findIndex(c => c.code === code && !c.used);
+        if(idx !== -1) {
+            let c = db.cards[idx];
+            if(c.type === 'money') db.users[current].money += parseFloat(c.val);
+            else activatePkg(current, db.pkgs.find(p=>p.id==c.val));
+            db.cards[idx].used = true; db.cards[idx].usedBy = current; save(); renderUser(); Swal.fire('شحن ناجح');
+        } else Swal.fire('خطأ','الكود خاطئ','error');
+    }
+
+    function buyPkg(id) {
+        let p = db.pkgs.find(x => x.id === id), u = db.users[current];
+        if(u.money >= p.price) { u.money -= p.price; activatePkg(current, p); renderUser(); Swal.fire('تم التفعيل'); }
+        else Swal.fire('رصيد ناقص');
+    }
+
+    function generateCards(source) {
+        let v, q, t, creator;
+        if(source === 'admin') {
+            v = document.getElementById('admRcVal').value;
+            q = document.getElementById('admRcQty').value;
+            t = document.getElementById('admRcType').value;
+            creator = "Admin";
+        } else {
+            v = document.getElementById('rcVal').value;
+            q = document.getElementById('rcQty').value;
+            t = document.getElementById('rcType').value;
+            creator = current;
+            let cost = (t==='money' ? v*q : db.pkgs.find(p=>p.id==v).price*q) * 0.9;
+            if(db.resellers[current].credit < cost) return Swal.fire('رصيد ناقص');
+            db.resellers[current].credit -= cost;
+        }
+
+        if(!v || !q) return;
+        let h = ''; for(let i=0; i<q; i++) {
+            let code = "NSM-" + Math.random().toString(36).substr(2,7).toUpperCase();
+            db.cards.push({code, val:v, type:t, used:false, usedBy:'', creator:creator});
+            h += `<div class="v-card">نسمة نت<br>${t=='money'?'رصيد':'باقة'}<br><b>${code}</b><br>القيمة: ${v}</div>`;
+        }
+        save(); document.getElementById('print-area').innerHTML = h; window.print();
+        if(source === 'admin') renderAdmin(); else renderReseller();
+    }
+
+    function showPage(id) { document.querySelectorAll('.page').forEach(p=>p.classList.remove('active-page')); document.getElementById(id).classList.add('active-page'); }
+    function showTab(id, btn) { document.querySelectorAll('.adm-sec').forEach(s=>s.style.display='none'); document.getElementById(id).style.display='block'; btn.parentElement.querySelector('.active').classList.remove('active'); btn.classList.add('active'); }
+    function showResSec(id, btn) { document.querySelectorAll('.res-page').forEach(s=>s.style.display='none'); document.getElementById(id).style.display='block'; btn.parentElement.querySelector('.active').classList.remove('active'); btn.classList.add('active'); }
+    function showUSec(id, btn) { document.querySelectorAll('.u-page').forEach(s=>s.style.display='none'); document.getElementById(id).style.display='block'; btn.parentElement.querySelector('.active').classList.remove('active'); btn.classList.add('active'); }
+    function addUser(r) { let u=prompt("اليوزر:"), p=prompt("السر:"); if(u&&p){db.users[u]={pass:p,money:0,quota:0,time:0}; save(); if(r==='admin')renderAdmin(); else renderReseller();}}
+    function addReseller() { let n=document.getElementById('resN').value, p=document.getElementById('resP').value; if(n&&p){db.resellers[n]={pass:p,credit:0}; save(); renderAdmin();}}
+    function addCr(r) { let m=prompt("المبلغ:"); if(m){db.resellers[r].credit+=parseFloat(m); save(); renderAdmin();}}
+    function del(t, k) { if(confirm('حذف؟')){ if(t==='u') delete db.users[k]; else delete db.resellers[k]; save(); renderAdmin(); }}
+    function logout() { current=null; role=""; location.reload(); }
+</script>
+</body>
+</html>
